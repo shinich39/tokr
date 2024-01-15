@@ -41,6 +41,9 @@ const createWindow = () => {
     }
   });
 
+  // set always on top
+  mainWindow.setAlwaysOnTop(true, 'screen');
+
   // and load the index.html of the app.
   mainWindow.loadFile('index.html');
   
