@@ -1,0 +1,31 @@
+[{
+    "enabled": true,
+    "name": "Google",
+    "url": "https://translate.google.com/?op=translate&text=<TEXT>&sl=<FROM>&tl=<TO>",
+    "query": "span.ryNqvb",
+    "extract": "text"
+}, {
+    "enabled": true,
+    "name": "Papago",
+    "url": "https://papago.naver.com/?sk=<FROM>&tk=<TO>&st=<TEXT>",
+    "query": "#txtTarget span",
+    "extract": "text"
+}, {
+    "enabled": true,
+    "name": "Deepl",
+    "url": "https://www.deepl.com/translator#<FROM>/<TO>/<TEXT>",
+    "query": "div[aria-labelledby='translation-target-heading'] p span",
+    "extract": "text"
+}, {
+    "enabled": false,
+    "name": "Bing",
+    "url": "https://www.bing.com/translator?from=<FROM>&to=<TO>&text=<TEXT>",
+    "query": "#tta_output_ta",
+    "extract": "value"
+}, {
+    "enabled": false,
+    "name": "Yandex",
+    "url": "https://translate.yandex.com/?source_lang=<FROM>&target_lang=<TO>&text=<TEXT>",
+    "query": "span.translation-word",
+    "extract": "text"
+}]

@@ -1,0 +1,87 @@
+{
+  "name": "tokr",
+  "version": "1.0.0",
+  "description": "Translate text to Korean",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:osx": "electron-builder --mac",
+    "build:mac": "electron-builder --mac",
+    "build:win32": "electron-builder --win --ia32",
+    "build:win64": "electron-builder --win --x64",
+    "build:linux": "electron-builder --linux",
+    "unlink": "rimraf .git"
+  },
+  "build": {
+    "productName": "ToKR",
+    "appId": "com.shinich39.tokr",
+    "asar": false,
+    "protocols": {
+      "name": "ToKR",
+      "schemes": [
+        "tokr"
+      ]
+    },
+    "mac": {
+      "target": [
+        "zip",
+        "dmg"
+      ],
+      "icon": "./resources/icons/512x512.png"
+    },
+    "dmg": {
+      "title": "ToKR",
+      "icon": "./resources/icons/512x512.png"
+    },
+    "win": {
+      "target": [
+        "zip",
+        "nsis",
+        "portable"
+      ],
+      "requestedExecutionLevel": "requireAdministrator",
+      "icon": "./resources/icons/256x256.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "installerIcon": "./resources/icons/256x256.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "./resources/icons/256x256.png"
+    },
+    "directories": {
+      "buildResources": "./resources/",
+      "output": "./dist/",
+      "app": "."
+    }
+  },
+  "keywords": [
+    "electron"
+  ],
+  "author": "shinich39 <shinich39@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shinich39/tokr.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shinich39/tokr/issues"
+  },
+  "homepage": "https://github.com/shinich39/tokr#readme",
+  "devDependencies": {
+    "electron": "^24.8.3",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "electron-clipboard-extended": "^1.1.1",
+    "languagedetect": "^2.0.0",
+    "moment": "^2.30.1"
+  }
+}
