@@ -39,7 +39,6 @@
         "nsis",
         "portable"
       ],
-      "requestedExecutionLevel": "requireAdministrator",
       "icon": "./resources/icons/256x256.ico"
     },
     "nsis": {
