@@ -3,6 +3,8 @@ const {
   BrowserWindow,
   BrowserView,
   ipcMain,
+  Menu,
+  MenuItem,
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -24,8 +26,82 @@ const {
   send,
   receive,
   handle,
-  setMenu,
 } = require('./libs/utils');
+
+const createMenu = () => {
+  const menu = isMac() ? {
+    [app.name]: [
+      { role: 'about' },
+      { type: 'separator' },
+      { role: 'services' },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideOthers' },
+      { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit' }
+    ],
+    File: [
+      { role: 'close' }
+    ],
+    View: [
+      { role: 'reload' },
+      { role: 'toggleDevTools' },
+      { type: 'separator' },
+      { role: 'resetZoom' },
+      { role: 'zoomIn' },
+      { role: 'zoomOut' },
+      { type: 'separator' },
+      { role: 'togglefullscreen' }
+    ],
+    Window: [
+      { id: "always-on-top", type: "checkbox", label: "Always on Top", click: toggleAlwaysOnTop, checked: false, },
+      { type: 'separator' },
+      { role: 'minimize' },
+      { role: 'zoom' },
+      { type: 'separator' },
+      { role: 'front' },
+      { type: 'separator' },
+      { role: 'window' }
+    ],
+  } : {
+    File: [
+      { role: 'quit' }
+    ],
+    View: [
+      { role: 'reload' },
+      { role: 'toggleDevTools' },
+      { type: 'separator' },
+      { role: 'resetZoom' },
+      { role: 'zoomIn' },
+      { role: 'zoomOut' },
+      { type: 'separator' },
+      { role: 'togglefullscreen' }
+    ],
+    Window: [
+      { id: "always-on-top", type: "checkbox", label: "Always on Top", click: toggleAlwaysOnTop, checked: false, },
+      { type: 'separator' },
+      { role: 'minimize' },
+      { role: 'zoom' },
+      { type: 'separator' },
+      { role: 'close' }
+    ],
+  };
+  
+  const tmp = [];
+  for (const label of Object.keys(menu)) {
+    tmp.push({
+      label: label,
+      submenu: menu[label],
+    });
+  }
+  
+  const template = Menu.buildFromTemplate(tmp);
+
+  Menu.setApplicationMenu(template);
+}
+
+createMenu();
 
 const createWindow = () => {
   // Create the browser window.
@@ -41,9 +117,6 @@ const createWindow = () => {
     }
   });
 
-  // set always on top
-  mainWindow.setAlwaysOnTop(true, 'screen');
-
   // and load the index.html of the app.
   mainWindow.loadFile('index.html');
   
@@ -53,6 +126,9 @@ const createWindow = () => {
   // Set event listeners.
   mainWindow.webContents.on("did-finish-load", function() {
     console.log("Electron window loaded");
+    
+    // set always on top
+    enableAlwaysOnTop();
 
     // set config
     mainWindow.webContents.send("set-config", {
@@ -160,6 +236,31 @@ ipcMain.on("translate", function(e, req) {
 
   startTask();
 });
+
+function toggleAlwaysOnTop() {
+  if (mainWindow && mainWindow.isAlwaysOnTop()) {
+    disableAlwaysOnTop();
+  } else {
+    enableAlwaysOnTop();
+  }
+}
+
+function enableAlwaysOnTop() {
+  if (!mainWindow.isAlwaysOnTop()) {
+    mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    mainWindow.setAlwaysOnTop(true, "floating");
+    mainWindow.setFullScreenable(false);
+    mainWindow.moveTop();
+    Menu.getApplicationMenu().getMenuItemById('always-on-top').checked = true;
+  }
+}
+
+function disableAlwaysOnTop() {
+  if (mainWindow.isAlwaysOnTop()) {
+    mainWindow.setAlwaysOnTop(false, "normal");
+    Menu.getApplicationMenu().getMenuItemById('always-on-top').checked = false;
+  }
+}
 
 function startWatch() {
   if (!isWatched) {
