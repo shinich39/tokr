@@ -48,6 +48,8 @@ receive("create-log", function(e, req) {
     li.setAttribute("data-provider", provider);
     li.innerHTML = "<strong>"+text+"</strong>";
     logElem.appendChild(li);
+
+    scrollToBottom(logElem);
 });
 
 receive("update-log", function(e, req) {

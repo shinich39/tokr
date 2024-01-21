@@ -17,15 +17,6 @@ const {
   isMac,
   isWin,
   isLinux,
-  getPid,
-  getPath,
-  getWindow,
-  setEventLimit,
-  alert,
-  confirm,
-  send,
-  receive,
-  handle,
 } = require('./libs/utils');
 
 const createMenu = () => {
@@ -179,6 +170,7 @@ const LOG_FILE_PATH = path.join(LOG_DIR_PATH, moment().format("YYYY-MM-DD") + ".
 let MAX_LENGTH = 256;
 let MAX_PROCESS = PROVIDERS.length;
 let isWatched = false;
+let inProgress = false;
 let mainWindow;
 let config;
 let queueIndex = 0;
@@ -233,6 +225,8 @@ ipcMain.on("translate", function(e, req) {
     id: task.id,
     text: task.result,
   });
+
+  endTask(task);
 
   startTask();
 });
@@ -346,13 +340,14 @@ function createTask(id, text) {
     provider: provider,
     from: config.from,
     to: config.to,
-    window: null,
+    webContents: null,
     inProgress: false,
     isProcessed: false,
     isTranslated: false,
     isErrored: false,
     isRendered: false,
     isLogged: false,
+    isDestroyed: false,
     url: generateURL(provider.url, text, config.from, config.to),
     error: null,
     result: null,
@@ -373,7 +368,7 @@ function createTask(id, text) {
   });
 
   // create view window
-  task.window = new BrowserView({
+  const view = new BrowserView({
     // icon: path.join(__dirname, "resources/icons/512x512.png"),
     webPreferences: {
       offscreen: true,
@@ -385,12 +380,21 @@ function createTask(id, text) {
   });
 
   // Open the DevTools.
-  // task.window.webContents.openDevTools();
+  // view.webContents.openDevTools();
 
-  // task.window.webContents.setFrameRate(30);
+  // view.webContents.setFrameRate(30);
+
+  task.webContents = view.webContents;
+
+  console.log(task)
 }
 
 function startTask() {
+  if (inProgress) {
+    return;
+  }
+  inProgress = true;
+
   let processCount = 0;
   let completeCount = 0;
   for (let i = 0; i < queue.length; i++) {
@@ -411,13 +415,14 @@ function startTask() {
     console.log("Start translate:", task.id);
 
     task.inProgress = true;
+    processCount++;
 
-    // set event
-    task.window.webContents.on("did-finish-load", function() {
+    // set window event
+    task.webContents.on("did-finish-load", function() {
       // console.log("Translator window loaded");
   
       // start translate
-      task.window.webContents.send("translate", {
+      task.webContents.send("translate", {
         id: task.id,
         query: task.provider.query,
         extract: task.provider.extract,
@@ -426,9 +431,9 @@ function startTask() {
     });
 
     // load task url
-    task.window.webContents.loadURL(task.url);
+    task.webContents.loadURL(task.url);
 
-    // set timeout 10000ms + 1024ms
+    // set timeout 10000ms
     setTimeout(function(item) {
       if (!task.isRendered) {
         console.log("Time out:", task.id);
@@ -446,17 +451,29 @@ function startTask() {
           text: task.result,
         });
 
+        endTask(task);
+
         startTask();
       }
-    }, 11024);
-
-    processCount++;
+    }, 10000);
   }
 
   // end
   if (completeCount === queue.length) {
     console.log("End translate.");
-    saveLogs();
+    // saveLogs();
+  }
+
+  inProgress = false;
+}
+
+// destory window
+function endTask(task) {
+  if (!task.isDestroyed && task.webContents) {
+    task.webContents.close();
+    task.isDestroyed = true;
+    task.webContents = null;
+    console.log("Destroy:", task.id);
   }
 }
 

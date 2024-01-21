@@ -20,14 +20,14 @@ window.addEventListener('DOMContentLoaded', function() {
         const { id, query, extract } = req;
         let count = 0;
         let intervalID = setInterval(function() {
-            if (count > 100) {
-                clearInterval(intervalID);
-                send("translate", {
-                    id: id,
-                    error: "TIME OUT",
-                });
-                return;
-            }
+            // if (count > 100) {
+            //     clearInterval(intervalID);
+            //     send("translate", {
+            //         id: id,
+            //         error: "TIME OUT",
+            //     });
+            //     return;
+            // }
     
             const element = document.querySelector(query);
             if (!element) {
