@@ -13,6 +13,7 @@ const clipboard = require('electron-clipboard-extended');
 const LanguageDetect = require('languagedetect');
 const lngDetector = new LanguageDetect();
 lngDetector.setLanguageType("iso2");
+const { JSDOM, ResourceLoader, VirtualConsole } = require("jsdom");
 const {
   isMac,
   isWin,
@@ -123,7 +124,8 @@ const createWindow = () => {
 
     // set config
     mainWindow.webContents.send("set-config", {
-      languages: LANGUAGES
+      languages: LANGUAGES,
+      providers: PROVIDERS,
     });
   });
 
@@ -136,6 +138,30 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+
+  // create view windows
+  for (let i = 0; i < MAX_PROCESS; i++) {
+    // create view window
+    const view = new BrowserView({
+      // icon: path.join(__dirname, "resources/icons/512x512.png"),
+      webPreferences: {
+        offscreen: true,
+        preload: path.join(__dirname, 'translator.js'),
+        worldSafeExecuteJavaScript: true,
+        contextIsolation: true, // https://www.electronjs.org/docs/latest/tutorial/security
+        nodeIntegration: false,
+      }
+    });
+
+    // Open the DevTools.
+    // view.webContents.openDevTools();
+
+    // view.webContents.setFrameRate(30);
+
+    views.push(view.webContents);
+  }
+
+  // create main window
   createWindow();
 
   app.on('activate', () => {
@@ -168,28 +194,22 @@ const FULL_STOPS = ["\.","\!","\?","\。","\n"];
 const LOG_DIR_PATH = path.join(__dirname, "logs");
 const LOG_FILE_PATH = path.join(LOG_DIR_PATH, moment().format("YYYY-MM-DD") + ".txt");
 let MAX_LENGTH = 256;
-let MAX_PROCESS = PROVIDERS.length;
+let MAX_PROCESS = 2;
 let isWatched = false;
 let inProgress = false;
 let mainWindow;
 let config;
 let queueIndex = 0;
 let queue = [];
-
-// check log dir
-if (!fs.existsSync(LOG_DIR_PATH)) {
-  fs.mkdirSync(LOG_DIR_PATH);
-}
-
-// check log file
-if (!fs.existsSync(LOG_FILE_PATH)) {
-  fs.writeFileSync(LOG_FILE_PATH, "", { encoding: "utf-8" });
-}
+let views = [];
 
 ipcMain.on("set-config", function(e, req) {
   config = {
     from: req.from,
     to: req.to,
+    provider: PROVIDERS.find(function(item) {
+      return item.name === req.provider;
+    }),
   };
 
   console.log("Set config:", config);
@@ -226,7 +246,7 @@ ipcMain.on("translate", function(e, req) {
     text: task.result,
   });
 
-  endTask(task);
+  // endTask(task);
 
   startTask();
 });
@@ -258,7 +278,7 @@ function disableAlwaysOnTop() {
 
 function startWatch() {
   if (!isWatched) {
-    clipboard.on("text-changed", onChange);
+    clipboard.on("text-changed", onClipboardChange);
     clipboard.startWatching();
     isWatched = true;
     console.log("Electron watch started");
@@ -275,6 +295,16 @@ function stopWatch() {
 }
 
 function saveLogs() {
+  // check log dir
+  if (!fs.existsSync(LOG_DIR_PATH)) {
+    fs.mkdirSync(LOG_DIR_PATH);
+  }
+
+  // check log file
+  if (!fs.existsSync(LOG_FILE_PATH)) {
+    fs.writeFileSync(LOG_FILE_PATH, "", { encoding: "utf-8" });
+  }
+
   const prev = fs.readFileSync(LOG_FILE_PATH, { encoding: "utf-8" });
 
   let curr = "";
@@ -331,16 +361,19 @@ function getLocaleByLang(lang) {
 
 function createTask(id, text) {
   // choose provider
-  const provider = PROVIDERS[id % PROVIDERS.length];
+  // const provider = PROVIDERS[id % PROVIDERS.length];
+
+  const webContents = views[id % views.length];
+  const provider = config.provider;
 
   // create task
   const task = {
     id: id,
     text: text,
     provider: provider,
+    webContents: webContents,
     from: config.from,
     to: config.to,
-    webContents: null,
     inProgress: false,
     isProcessed: false,
     isTranslated: false,
@@ -351,7 +384,6 @@ function createTask(id, text) {
     url: generateURL(provider.url, text, config.from, config.to),
     error: null,
     result: null,
-    window: null,
     createdAt: Date.now(),
     processedAt: null,
     renderedAt: null,
@@ -366,27 +398,6 @@ function createTask(id, text) {
     text: text,
     provider: provider.name,
   });
-
-  // create view window
-  const view = new BrowserView({
-    // icon: path.join(__dirname, "resources/icons/512x512.png"),
-    webPreferences: {
-      offscreen: true,
-      preload: path.join(__dirname, 'translator.js'),
-      worldSafeExecuteJavaScript: true,
-      contextIsolation: true, // https://www.electronjs.org/docs/latest/tutorial/security
-      nodeIntegration: false,
-    }
-  });
-
-  // Open the DevTools.
-  // view.webContents.openDevTools();
-
-  // view.webContents.setFrameRate(30);
-
-  task.webContents = view.webContents;
-
-  console.log(task)
 }
 
 function startTask() {
@@ -451,7 +462,7 @@ function startTask() {
           text: task.result,
         });
 
-        endTask(task);
+        // endTask(task);
 
         startTask();
       }
@@ -478,7 +489,7 @@ function endTask(task) {
 }
 
 // add translate queue
-async function onChange() {
+async function onClipboardChange() {
   try {
     const copiedText = clipboard.readText();
     const textArray = normalize(copiedText);

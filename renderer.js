@@ -2,6 +2,7 @@ const { invoke, send, receive } = window.electron;
 
 const fromElem = document.getElementById("from");
 const toElem = document.getElementById("to");
+const provElem = document.getElementById("provider");
 const logElem = document.getElementById("logs");
 
 function scrollToBottom(element) {
@@ -9,7 +10,7 @@ function scrollToBottom(element) {
 }
 
 receive("set-config", function(e, req) {
-    const { languages } = req;
+    const { languages, providers } = req;
 
     // from
     for (const lang of languages) {
@@ -31,10 +32,23 @@ receive("set-config", function(e, req) {
         }
     }
 
+    // providers
+    for (const prov of providers) {
+        const opt = document.createElement("option");
+        opt.value = prov.name;
+        opt.textContent = prov.name;
+        provElem.appendChild(opt);
+
+        if (prov.name === "Google") {
+            opt.selected = true;
+        }
+    }
+
     // init
     send("set-config", {
         from: fromElem.value,
         to: toElem.value,
+        provider: provElem.value,
     });
 });
 
@@ -61,13 +75,16 @@ receive("update-log", function(e, req) {
     if (li) {
         li.innerHTML += "<br />" + text;
     }
+
+    scrollToBottom(logElem);
 });
 
-[fromElem, toElem].forEach(function(elem) {
+[fromElem, toElem, provElem].forEach(function(elem) {
     elem.addEventListener("change", function(e) {
         send("set-config", {
             from: fromElem.value,
             to: toElem.value,
+            provider: provElem.value,
         });
     });
 });

@@ -1,6 +1,6 @@
 {
   "name": "tokr",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Translate text to Korean",
   "main": "main.js",
   "scripts": {
@@ -80,6 +80,7 @@
   },
   "dependencies": {
     "electron-clipboard-extended": "^1.1.1",
+    "jsdom": "^24.0.0",
     "languagedetect": "^2.0.0",
     "moment": "^2.30.1"
   }
