@@ -194,7 +194,7 @@ const FULL_STOPS = ["\.","\!","\?","\。","\n"];
 const LOG_DIR_PATH = path.join(__dirname, "logs");
 const LOG_FILE_PATH = path.join(LOG_DIR_PATH, moment().format("YYYY-MM-DD") + ".txt");
 let MAX_LENGTH = 256;
-let MAX_PROCESS = 2;
+let MAX_PROCESS = 3;
 let isWatched = false;
 let inProgress = false;
 let mainWindow;
